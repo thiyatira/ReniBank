@@ -20,7 +20,7 @@ public class ATMApp extends JFrame {
     final Bank bank;
     Bank.Account current;
     final JPanel content = new JPanel(new BorderLayout());
-    final JPanel body = new JPanel();
+    final JPanel body = column(null);
     final JLabel title = new JLabel(), subtitle = new JLabel(), status = new JLabel(" ");
     final JLabel identity = new JLabel(" ");
     final Map<String, JComponent> inputs = new LinkedHashMap<>();
@@ -42,9 +42,7 @@ public class ATMApp extends JFrame {
         root.add(sidebar(), BorderLayout.WEST);
         content.setBackground(CREAM);
         content.setBorder(new EmptyBorder(36, 38, 24, 38));
-        JPanel heading = new JPanel();
-        heading.setOpaque(false);
-        heading.setLayout(new BoxLayout(heading, BoxLayout.Y_AXIS));
+        JPanel heading = column(null);
         title.setFont(BODY.deriveFont(Font.BOLD, 30));
         title.setForeground(INK);
         subtitle.setFont(BODY);
@@ -54,8 +52,6 @@ public class ATMApp extends JFrame {
         heading.add(subtitle);
         heading.add(Box.createVerticalStrut(28));
         content.add(heading, BorderLayout.NORTH);
-        body.setOpaque(false);
-        body.setLayout(new BoxLayout(body, BoxLayout.Y_AXIS));
         content.add(body, BorderLayout.CENTER);
         status.setFont(BODY.deriveFont(13f));
         status.setBorder(new EmptyBorder(20, 0, 0, 0));
@@ -65,20 +61,12 @@ public class ATMApp extends JFrame {
     }
 
     private JPanel sidebar() {
-        JPanel side = new JPanel();
-        side.setBackground(SIDEBAR);
+        JPanel side = column(SIDEBAR);
         side.setPreferredSize(new Dimension(246, 0));
         side.setBorder(new EmptyBorder(32, 23, 25, 23));
-        side.setLayout(new BoxLayout(side, BoxLayout.Y_AXIS));
-        JLabel mark = new JLabel("RB /");
-        mark.setFont(BODY.deriveFont(Font.BOLD, 38));
-        mark.setForeground(ACCENT);
-        side.add(mark);
+        side.add(label("RB /", 38, ACCENT, true));
         side.add(Box.createVerticalStrut(8));
-        JLabel name = new JLabel("RENI BANK");
-        name.setFont(BODY.deriveFont(Font.BOLD, 14));
-        name.setForeground(INK);
-        side.add(name);
+        side.add(label("RENI BANK", 14, INK, true));
         side.add(Box.createVerticalStrut(40));
         for (int i = 0; i < MENU.length; i++) {
             String item = MENU[i];
@@ -130,26 +118,30 @@ public class ATMApp extends JFrame {
         try {
             if (current != null) current = bank.getAccount(current.number());
             switch (name) {
-                case "Sign in" -> loginPage();
-                case "Create account" -> createPage();
+                case "Sign in", "Create account", "Cash deposit", "Cash withdrawal", "Fund transfer" -> formPage();
                 case "Account details" -> detailsPage();
                 case "Balance enquiry" -> balancePage();
-                case "Cash deposit", "Cash withdrawal" -> cashPage(name.equals("Cash deposit"));
-                case "Fund transfer" -> transferPage();
                 case "Mini statement" -> statementPage();
                 default -> throw new IllegalArgumentException("Unknown menu option.");
             }
         } catch (Exception e) { message(readable(e), true); }
+        if (!name.equals("Mini statement")) body.add(Box.createVerticalGlue());
         body.revalidate();
         body.repaint();
     }
 
-    private JPanel card() {
+    private static JPanel column(Color color) {
         JPanel panel = new JPanel();
-        panel.setBackground(Color.WHITE);
+        panel.setLayout(new BoxLayout(panel, BoxLayout.Y_AXIS));
+        panel.setOpaque(color != null);
+        if (color != null) panel.setBackground(color);
+        return panel;
+    }
+
+    private JPanel card() {
+        JPanel panel = column(Color.WHITE);
         panel.setBorder(BorderFactory.createCompoundBorder(
                 BorderFactory.createLineBorder(LINE), new EmptyBorder(28, 30, 28, 30)));
-        panel.setLayout(new BoxLayout(panel, BoxLayout.Y_AXIS));
         panel.setAlignmentX(Component.LEFT_ALIGNMENT);
         body.add(panel);
         body.add(Box.createVerticalStrut(18));
@@ -169,24 +161,29 @@ public class ATMApp extends JFrame {
         panel.add(Box.createVerticalStrut(12));
     }
 
-    private JComponent field(JPanel panel, String key, String caption, boolean secret) {
+    private void field(JPanel panel, String key, String caption) {
         panel.add(label(caption, 13, MUTED, true));
         panel.add(Box.createVerticalStrut(6));
-        JTextField field = secret ? new JPasswordField() : new JTextField();
+        JComponent field = switch (key) {
+            case "pin" -> new JPasswordField();
+            case "type" -> new JComboBox<>(new String[]{"Savings", "Current"});
+            default -> new JTextField();
+        };
         field.setFont(BODY);
-        field.setForeground(INK);
-        field.setBackground(new Color(251, 252, 253));
-        field.setBorder(BorderFactory.createCompoundBorder(
-                BorderFactory.createLineBorder(LINE), new EmptyBorder(10, 12, 10, 12)));
+        if (field instanceof JTextField) {
+            field.setForeground(INK);
+            field.setBackground(new Color(251, 252, 253));
+            field.setBorder(BorderFactory.createCompoundBorder(
+                    BorderFactory.createLineBorder(LINE), new EmptyBorder(10, 12, 10, 12)));
+        }
         field.setMaximumSize(new Dimension(Integer.MAX_VALUE, 43));
         field.setAlignmentX(Component.LEFT_ALIGNMENT);
         panel.add(field);
         panel.add(Box.createVerticalStrut(16));
         inputs.put(key, field);
-        return field;
     }
 
-    private JButton action(JPanel panel, String caption, Task task) {
+    private void action(JPanel panel, String caption, Task task) {
         JButton button = new JButton(caption);
         button.setFont(BODY.deriveFont(Font.BOLD));
         button.setForeground(Color.WHITE);
@@ -201,7 +198,6 @@ public class ATMApp extends JFrame {
         });
         panel.add(button);
         actionButton = button;
-        return button;
     }
 
     private String value(String key) {
@@ -225,49 +221,62 @@ public class ATMApp extends JFrame {
         } catch (NumberFormatException e) { throw new IllegalArgumentException("Enter a valid account number."); }
     }
 
-    private void loginPage() {
+    /** All input screens share the same field and button builders. */
+    private void formPage() {
         JPanel panel = card();
-        field(panel, "account", "ACCOUNT NUMBER", false);
-        field(panel, "pin", "PIN", true);
-        action(panel, "Sign in  →", () -> {
-            current = bank.login(number("account"), value("pin"));
-            identity.setText(current.name());
-            showPage("Balance enquiry");
-        });
-        body.add(Box.createVerticalGlue());
+        if (page.equals("Sign in")) {
+            field(panel, "account", "ACCOUNT NUMBER");
+            field(panel, "pin", "PIN");
+            action(panel, "Sign in  →", this::submit);
+        } else if (page.equals("Create account")) {
+            JPanel columns = new JPanel(new GridLayout(1, 2, 24, 0));
+            JPanel left = column(null), right = column(null);
+            columns.setOpaque(false);
+            columns.setAlignmentX(Component.LEFT_ALIGNMENT);
+            field(left, "name", "CUSTOMER NAME");
+            field(left, "type", "ACCOUNT TYPE");
+            field(left, "mobile", "MOBILE NUMBER  /  10 DIGITS");
+            field(right, "pin", "CHOOSE PIN  /  4 DIGITS");
+            field(right, "initial", "INITIAL DEPOSIT  /  ₹");
+            columns.add(left); columns.add(right);
+            panel.add(columns);
+            panel.add(Box.createVerticalStrut(10));
+            action(panel, "Create my account  →", this::submit);
+        } else {
+            boolean transfer = page.equals("Fund transfer");
+            text(panel, "Available balance  /  ₹ " + cash(current.balance()), 17, ACCENT, true);
+            panel.add(Box.createVerticalStrut(transfer ? 12 : 15));
+            if (transfer) field(panel, "recipient", "RECIPIENT ACCOUNT NUMBER");
+            field(panel, "amount", transfer ? "TRANSFER AMOUNT  /  ₹" : "AMOUNT  /  ₹");
+            String button = transfer ? "Transfer" : page.equals("Cash deposit") ? "Deposit" : "Withdraw";
+            action(panel, button + " money  →", this::submit);
+        }
     }
 
-    private void createPage() {
-        JPanel panel = card();
-        JPanel columns = new JPanel(new GridLayout(1, 2, 24, 0));
-        columns.setOpaque(false);
-        columns.setAlignmentX(Component.LEFT_ALIGNMENT);
-        JPanel left = new JPanel(), right = new JPanel();
-        for (JPanel p : new JPanel[]{left, right}) { p.setOpaque(false); p.setLayout(new BoxLayout(p, BoxLayout.Y_AXIS)); }
-        field(left, "name", "CUSTOMER NAME", false);
-        left.add(label("ACCOUNT TYPE", 13, MUTED, true));
-        left.add(Box.createVerticalStrut(6));
-        JComboBox<String> type = new JComboBox<>(new String[]{"Savings", "Current"});
-        type.setFont(BODY);
-        type.setMaximumSize(new Dimension(Integer.MAX_VALUE, 43));
-        type.setAlignmentX(Component.LEFT_ALIGNMENT);
-        left.add(type);
-        left.add(Box.createVerticalStrut(16));
-        inputs.put("type", type);
-        field(left, "mobile", "MOBILE NUMBER  /  10 DIGITS", false);
-        field(right, "pin", "CHOOSE PIN  /  4 DIGITS", true);
-        field(right, "initial", "INITIAL DEPOSIT  /  ₹", false);
-        columns.add(left); columns.add(right);
-        panel.add(columns);
-        panel.add(Box.createVerticalStrut(10));
-        action(panel, "Create my account  →", () -> {
-            long n = bank.createAccount(value("name"), value("type"), value("pin"), value("mobile"), value("initial"));
-            current = bank.getAccount(n);
+    private void submit() throws Exception {
+        if (page.equals("Sign in") || page.equals("Create account")) {
+            boolean create = page.equals("Create account");
+            current = create
+                    ? bank.getAccount(bank.createAccount(value("name"), value("type"), value("pin"), value("mobile"), value("initial")))
+                    : bank.login(number("account"), value("pin"));
             identity.setText(current.name());
-            showPage("Account details");
-            message("Account created successfully. Your account number is " + n + ".", false);
-        });
-        body.add(Box.createVerticalGlue());
+            showPage(create ? "Account details" : "Balance enquiry");
+            if (create) message("Account created successfully. Your account number is " + current.number() + ".", false);
+        } else {
+            String result;
+            BigDecimal balance;
+            if (page.equals("Fund transfer")) {
+                long recipient = number("recipient");
+                balance = bank.transfer(current.number(), recipient, value("amount"));
+                result = "Transfer to " + recipient;
+            } else {
+                boolean deposit = page.equals("Cash deposit");
+                balance = deposit ? bank.deposit(current.number(), value("amount")) : bank.withdraw(current.number(), value("amount"));
+                result = deposit ? "Deposit" : "Withdrawal";
+            }
+            showPage(page);
+            message(result + " successful. Available balance: ₹ " + cash(balance), false);
+        }
     }
 
     private void detailsPage() {
@@ -286,7 +295,6 @@ public class ATMApp extends JFrame {
             line.add(label(row[1], 15, INK, true), BorderLayout.EAST);
             panel.add(line);
         }
-        body.add(Box.createVerticalGlue());
     }
 
     private void balancePage() {
@@ -295,36 +303,6 @@ public class ATMApp extends JFrame {
         text(panel, "₹ " + cash(current.balance()), 43, ACCENT, true);
         panel.add(Box.createVerticalStrut(16));
         action(panel, "Refresh balance", () -> { showPage("Balance enquiry"); message("Balance refreshed.", false); });
-        body.add(Box.createVerticalGlue());
-    }
-
-    private void cashPage(boolean deposit) {
-        JPanel panel = card();
-        text(panel, "Available balance  /  ₹ " + cash(current.balance()), 17, ACCENT, true);
-        panel.add(Box.createVerticalStrut(15));
-        field(panel, "amount", "AMOUNT  /  ₹", false);
-        action(panel, deposit ? "Deposit money  →" : "Withdraw money  →", () -> {
-            BigDecimal balance = deposit ? bank.deposit(current.number(), value("amount")) :
-                    bank.withdraw(current.number(), value("amount"));
-            showPage(deposit ? "Cash deposit" : "Cash withdrawal");
-            message((deposit ? "Deposit" : "Withdrawal") + " successful. Available balance: ₹ " + cash(balance), false);
-        });
-        body.add(Box.createVerticalGlue());
-    }
-
-    private void transferPage() {
-        JPanel panel = card();
-        text(panel, "Available balance  /  ₹ " + cash(current.balance()), 17, ACCENT, true);
-        panel.add(Box.createVerticalStrut(12));
-        field(panel, "recipient", "RECIPIENT ACCOUNT NUMBER", false);
-        field(panel, "amount", "TRANSFER AMOUNT  /  ₹", false);
-        action(panel, "Transfer money  →", () -> {
-            long recipient = number("recipient");
-            BigDecimal balance = bank.transfer(current.number(), recipient, value("amount"));
-            showPage("Fund transfer");
-            message("Transfer to " + recipient + " successful. Available balance: ₹ " + cash(balance), false);
-        });
-        body.add(Box.createVerticalGlue());
     }
 
     private void statementPage() throws Exception {

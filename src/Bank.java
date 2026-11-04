@@ -6,10 +6,7 @@ import java.nio.file.Path;
 import java.security.MessageDigest;
 import java.security.SecureRandom;
 import java.sql.*;
-import java.util.ArrayList;
-import java.util.Base64;
-import java.util.List;
-import java.util.Properties;
+import java.util.*;
 import javax.crypto.SecretKeyFactory;
 import javax.crypto.spec.PBEKeySpec;
 
@@ -34,36 +31,17 @@ public class Bank {
 
     Connection connect() throws SQLException { return DriverManager.getConnection(url, user, password); }
 
-    public void initialize() throws SQLException {
+    public void initialize() throws Exception {
         try (Connection c = connect(); Statement s = c.createStatement()) {
-            s.executeUpdate("""
-                CREATE TABLE IF NOT EXISTS accounts (
-                    account_number BIGINT AUTO_INCREMENT PRIMARY KEY,
-                    customer_name VARCHAR(80) NOT NULL,
-                    account_type VARCHAR(10) NOT NULL,
-                    pin_hash VARCHAR(100) NOT NULL,
-                    pin_salt VARCHAR(40) NOT NULL,
-                    balance DECIMAL(12,2) NOT NULL CHECK (balance >= 0),
-                    mobile_number VARCHAR(10) NOT NULL,
-                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                    CHECK (account_type IN ('Savings', 'Current'))
-                ) ENGINE=InnoDB AUTO_INCREMENT=1001001
-                """);
-            s.executeUpdate("""
-                CREATE TABLE IF NOT EXISTS transactions (
-                    transaction_id BIGINT AUTO_INCREMENT PRIMARY KEY,
-                    account_number BIGINT NOT NULL,
-                    transaction_type VARCHAR(20) NOT NULL,
-                    amount DECIMAL(12,2) NOT NULL CHECK (amount >= 0),
-                    related_account BIGINT NULL,
-                    balance_after DECIMAL(12,2) NOT NULL,
-                    transaction_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                    FOREIGN KEY (account_number) REFERENCES accounts(account_number),
-                    FOREIGN KEY (related_account) REFERENCES accounts(account_number),
-                    INDEX account_history (account_number, transaction_id)
-                ) ENGINE=InnoDB
-                """);
+            for (String sql : Files.readString(Path.of("sql/schema.sql")).split(";"))
+                if (!sql.isBlank()) s.executeUpdate(sql);
         }
+    }
+
+    private PreparedStatement prepare(Connection c, String sql, Object... values) throws SQLException {
+        PreparedStatement s = c.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS);
+        for (int i = 0; i < values.length; i++) s.setObject(i + 1, values[i]);
+        return s;
     }
 
     public static BigDecimal money(String text, boolean allowZero) {
@@ -88,13 +66,11 @@ public class Bank {
         new SecureRandom().nextBytes(salt);
         try (Connection c = connect()) {
             c.setAutoCommit(false);
-            try (PreparedStatement s = c.prepareStatement("""
+            try (PreparedStatement s = prepare(c, """
                     INSERT INTO accounts(customer_name, account_type, pin_hash, pin_salt, balance, mobile_number)
                     VALUES (?, ?, ?, ?, ?, ?)
-                    """, Statement.RETURN_GENERATED_KEYS)) {
-                s.setString(1, name); s.setString(2, type); s.setString(3, hash(pin, salt));
-                s.setString(4, Base64.getEncoder().encodeToString(salt));
-                s.setBigDecimal(5, amount); s.setString(6, mobile); s.executeUpdate();
+                    """, name, type, hash(pin, salt), Base64.getEncoder().encodeToString(salt), amount, mobile)) {
+                s.executeUpdate();
                 long number;
                 try (ResultSet keys = s.getGeneratedKeys()) { keys.next(); number = keys.getLong(1); }
                 record(c, number, "OPENING", amount, null, amount);
@@ -105,9 +81,8 @@ public class Bank {
     }
 
     public Account login(long number, String pin) throws Exception {
-        try (Connection c = connect(); PreparedStatement s = c.prepareStatement(
-                "SELECT pin_hash, pin_salt FROM accounts WHERE account_number = ?")) {
-            s.setLong(1, number);
+        try (Connection c = connect(); PreparedStatement s = prepare(c,
+                "SELECT pin_hash, pin_salt FROM accounts WHERE account_number = ?", number)) {
             try (ResultSet r = s.executeQuery()) {
                 if (r.next()) {
                     byte[] salt = Base64.getDecoder().decode(r.getString("pin_salt"));
@@ -126,8 +101,7 @@ public class Bank {
 
     private Account account(Connection c, long number, boolean lock) throws SQLException {
         String sql = "SELECT * FROM accounts WHERE account_number = ?" + (lock ? " FOR UPDATE" : "");
-        try (PreparedStatement s = c.prepareStatement(sql)) {
-            s.setLong(1, number);
+        try (PreparedStatement s = prepare(c, sql, number)) {
             try (ResultSet r = s.executeQuery()) {
                 if (!r.next()) throw new IllegalArgumentException("Account number does not exist.");
                 return new Account(r.getLong("account_number"), r.getString("customer_name"),
@@ -186,28 +160,25 @@ public class Bank {
     }
 
     private void updateBalance(Connection c, long number, BigDecimal balance) throws SQLException {
-        try (PreparedStatement s = c.prepareStatement("UPDATE accounts SET balance = ? WHERE account_number = ?")) {
-            s.setBigDecimal(1, balance); s.setLong(2, number); s.executeUpdate();
+        try (PreparedStatement s = prepare(c, "UPDATE accounts SET balance = ? WHERE account_number = ?", balance, number)) {
+            s.executeUpdate();
         }
     }
 
     private void record(Connection c, long number, String type, BigDecimal amount, Long other, BigDecimal balance) throws SQLException {
-        try (PreparedStatement s = c.prepareStatement("""
+        try (PreparedStatement s = prepare(c, """
                 INSERT INTO transactions(account_number, transaction_type, amount, related_account, balance_after)
                 VALUES (?, ?, ?, ?, ?)
-                """)) {
-            s.setLong(1, number); s.setString(2, type); s.setBigDecimal(3, amount);
-            if (other == null) s.setNull(4, Types.BIGINT); else s.setLong(4, other);
-            s.setBigDecimal(5, balance); s.executeUpdate();
+                """, number, type, amount, other, balance)) {
+            s.executeUpdate();
         }
     }
 
     public List<Entry> statement(long number) throws SQLException {
         List<Entry> rows = new ArrayList<>();
-        try (Connection c = connect(); PreparedStatement s = c.prepareStatement("""
+        try (Connection c = connect(); PreparedStatement s = prepare(c, """
                 SELECT * FROM transactions WHERE account_number = ? ORDER BY transaction_id DESC LIMIT 10
-                """)) {
-            s.setLong(1, number);
+                """, number)) {
             try (ResultSet r = s.executeQuery()) {
                 while (r.next()) {
                     long related = r.getLong("related_account");

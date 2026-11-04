@@ -1,7 +1,5 @@
--- Run this as a MySQL administrator, then set config.properties for atm_user.
--- The application also creates these two tables when first started.
-CREATE DATABASE IF NOT EXISTS atm_bank;
-USE atm_bank;
+-- The app runs this file inside the database selected in config.properties.
+-- For manual setup: mysql -u USER -p DATABASE < sql/schema.sql
 
 CREATE TABLE IF NOT EXISTS accounts (
     account_number BIGINT AUTO_INCREMENT PRIMARY KEY,
