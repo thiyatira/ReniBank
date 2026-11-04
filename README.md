@@ -1,3 +1,3 @@
 # Reni Bank
 
-Java and MySQL ATM project. Database tables are in `sql/schema.sql`.
+Java Swing + JDBC + MySQL ATM project. Use `sql/setup_example.sql` to set up the database. Demo accounts are in `sql/demo_data.sql`.
