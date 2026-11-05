@@ -1,25 +1,17 @@
 # Reni Bank
 
-ATM Banking Management System using **Java Swing, JDBC and MySQL**.  
-Thiyatira Reni N · RA2511003010637 · Advanced Programming Practice
+Java Swing + JDBC + MySQL ATM project for Windows.  
+**Thiyatira Reni N | RA2511003010637**  
+Advanced Programming Practice  
+SRM Institute of Science and Technology, Kattankulathur
 
-Create an account, view details and balance, deposit, withdraw, transfer, show the latest ten transactions, and exit.
+## Windows setup
 
-## Setup
+1. Install **JDK 17 or later**, **MySQL Server 8 or later**, and **MySQL Workbench**. Ensure Java's `bin` folder is in PATH and the MySQL service is running.
+2. In MySQL Workbench, connect as root, open `sql/setup_windows.sql`, and execute the complete file once. It creates the database and the four demo accounts.
+3. Double-click **Start_Reni_Bank.bat**. It copies the example configuration if needed, compiles the Java files, and opens the app.
 
-1. Install **Java 17+** and **MySQL 8+**.
-2. Download MySQL Connector/J and place its `.jar` in `lib/`.
-3. Change the example password in `sql/setup_example.sql`, then run that file as a MySQL administrator.
-4. Copy `config.example.properties` to `config.properties` and enter the matching database settings. Change the port if your MySQL uses 3306.
-5. Run `sh run.sh` on macOS/Linux, or `run.bat` on Windows. The app creates its tables automatically.
-
-Optional: after the tables exist, import the demo data into a new, empty database:
-
-```sh
-mysql -u atm_user -p -h 127.0.0.1 -P 3307 atm_bank < sql/demo_data.sql
-```
-
-Use the port from your configuration. Import the demo data only once.
+The default MySQL port is **3306**. If yours differs, change it in `config.properties`. The example configuration and setup SQL use the same local demo password. If you change that password, update both files. If `atm_user` already exists, use its password in the configuration.
 
 | Customer | Account | PIN | Balance |
 |---|---|---|---|
@@ -28,4 +20,13 @@ Use the port from your configuration. Import the demo data only once.
 | Jabin | 1001005 | 2468 | ₹13,000.00 |
 | Sandhya | 1001006 | 1357 | ₹14,500.00 |
 
-These are fictional demo accounts. `src/ATMApp.java` contains the interface; `src/Bank.java` contains the JDBC operations. Keep your local `config.properties` out of Git.
+These are fictional demo accounts. Import the setup SQL only into a new database; transactions persist in MySQL.
+
+## Files
+
+- `src/ATMApp.java`: menu and forms for all eight operations.
+- `src/Bank.java`: validation, PIN checks and JDBC operations.
+- `lib/`: included MySQL Connector/J driver and license.
+- `sql/`: table definitions, sample data and Windows setup.
+
+Source repository: https://github.com/thiyatira/ReniBank

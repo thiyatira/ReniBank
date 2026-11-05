@@ -1,5 +1,4 @@
 build/
 config.properties
 *.class
-lib/*.jar
 .DS_Store

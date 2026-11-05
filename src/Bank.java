@@ -23,7 +23,7 @@ public class Bank {
         if (Files.exists(file)) {
             try (InputStream in = Files.newInputStream(file)) { p.load(in); }
         }
-        url = p.getProperty("db.url", "jdbc:mysql://127.0.0.1:3307/atm_bank");
+        url = p.getProperty("db.url", "jdbc:mysql://localhost:3306/atm_bank");
         user = p.getProperty("db.user", "atm_user");
         password = p.getProperty("db.password", "");
         DriverManager.setLoginTimeout(5);
