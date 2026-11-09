@@ -1,5 +1,5 @@
 -- Optional sample data for a NEW, EMPTY database.
--- Includes Reni, Madhav, Jabin and Sandhya with their transaction history.
+-- Includes Reni, Jabin and Sandhya with their transaction history.
 -- mysql -u USER -p DATABASE < sql/demo_data.sql
 
 /*!40101 SET @OLD_CHARACTER_SET_CLIENT=@@CHARACTER_SET_CLIENT */;
@@ -14,18 +14,15 @@
 /*!40111 SET @OLD_SQL_NOTES=@@SQL_NOTES, SQL_NOTES=0 */;
 
 INSERT INTO `accounts` (`account_number`, `customer_name`, `account_type`, `pin_hash`, `pin_salt`, `balance`, `mobile_number`, `created_at`) VALUES (1001003,'Reni','Savings','kvWh3mCInvPBHOuBpudlt9XcbiuO78TC4EFX9Lrl3sw=','Zx+2CsOg/mOyYU6tNmI+mA==',27000.00,'9000000001','2026-11-05 16:38:44');
-INSERT INTO `accounts` (`account_number`, `customer_name`, `account_type`, `pin_hash`, `pin_salt`, `balance`, `mobile_number`, `created_at`) VALUES (1001004,'Madhav','Current','7wWErXgnZu2aPX329fjRVznawhnG5biGFW95ra7+om8=','9LiUol8qnR0iZAGiFvf2Zw==',19500.00,'9000000002','2026-11-05 16:38:44');
 INSERT INTO `accounts` (`account_number`, `customer_name`, `account_type`, `pin_hash`, `pin_salt`, `balance`, `mobile_number`, `created_at`) VALUES (1001005,'Jabin','Savings','LmzMdIiTxtob3Czly2feJZEkrq3e/h08c1ALcdveTVo=','nBUnQg28mV4JmrMOI5aHxw==',13000.00,'9000000003','2026-11-05 16:38:44');
 INSERT INTO `accounts` (`account_number`, `customer_name`, `account_type`, `pin_hash`, `pin_salt`, `balance`, `mobile_number`, `created_at`) VALUES (1001006,'Sandhya','Savings','k43estM8v6n/+UD36qV33XIu/qq4RCSmYWgvGd8l0L8=','GUZpsnrAb8JclmbAXdjBdw==',14500.00,'9000000004','2026-11-05 16:38:44');
 
 INSERT INTO `transactions` (`transaction_id`, `account_number`, `transaction_type`, `amount`, `related_account`, `balance_after`, `transaction_time`) VALUES (9,1001003,'OPENING',25000.00,NULL,25000.00,'2026-11-05 16:38:44');
-INSERT INTO `transactions` (`transaction_id`, `account_number`, `transaction_type`, `amount`, `related_account`, `balance_after`, `transaction_time`) VALUES (10,1001004,'OPENING',18000.00,NULL,18000.00,'2026-11-05 16:38:44');
 INSERT INTO `transactions` (`transaction_id`, `account_number`, `transaction_type`, `amount`, `related_account`, `balance_after`, `transaction_time`) VALUES (11,1001005,'OPENING',12000.00,NULL,12000.00,'2026-11-05 16:38:44');
 INSERT INTO `transactions` (`transaction_id`, `account_number`, `transaction_type`, `amount`, `related_account`, `balance_after`, `transaction_time`) VALUES (12,1001006,'OPENING',15000.00,NULL,15000.00,'2026-11-05 16:38:44');
 INSERT INTO `transactions` (`transaction_id`, `account_number`, `transaction_type`, `amount`, `related_account`, `balance_after`, `transaction_time`) VALUES (13,1001003,'DEPOSIT',5000.00,NULL,30000.00,'2026-11-05 16:38:44');
 INSERT INTO `transactions` (`transaction_id`, `account_number`, `transaction_type`, `amount`, `related_account`, `balance_after`, `transaction_time`) VALUES (14,1001003,'WITHDRAWAL',2000.00,NULL,28000.00,'2026-11-05 16:38:44');
-INSERT INTO `transactions` (`transaction_id`, `account_number`, `transaction_type`, `amount`, `related_account`, `balance_after`, `transaction_time`) VALUES (15,1001003,'TRANSFER_OUT',1500.00,1001004,26500.00,'2026-11-05 16:38:44');
-INSERT INTO `transactions` (`transaction_id`, `account_number`, `transaction_type`, `amount`, `related_account`, `balance_after`, `transaction_time`) VALUES (16,1001004,'TRANSFER_IN',1500.00,1001003,19500.00,'2026-11-05 16:38:44');
+INSERT INTO `transactions` (`transaction_id`, `account_number`, `transaction_type`, `amount`, `related_account`, `balance_after`, `transaction_time`) VALUES (15,1001003,'TRANSFER_OUT',1500.00,NULL,26500.00,'2026-11-05 16:38:44');
 INSERT INTO `transactions` (`transaction_id`, `account_number`, `transaction_type`, `amount`, `related_account`, `balance_after`, `transaction_time`) VALUES (17,1001006,'TRANSFER_OUT',500.00,1001003,14500.00,'2026-11-05 16:38:44');
 INSERT INTO `transactions` (`transaction_id`, `account_number`, `transaction_type`, `amount`, `related_account`, `balance_after`, `transaction_time`) VALUES (18,1001003,'TRANSFER_IN',500.00,1001006,27000.00,'2026-11-05 16:38:44');
 INSERT INTO `transactions` (`transaction_id`, `account_number`, `transaction_type`, `amount`, `related_account`, `balance_after`, `transaction_time`) VALUES (19,1001005,'DEPOSIT',1000.00,NULL,13000.00,'2026-11-05 16:38:44');
