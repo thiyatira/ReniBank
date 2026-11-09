@@ -5,33 +5,24 @@ Thiyatira Reni N | RA2511003010637
 Advanced Programming Practice
 SRM Institute of Science and Technology, Kattankulathur
 
-## Run with two PowerShell commands
+## Run
 
-Requires JDK 17 or later in PATH and MySQL 8.4 installed at the paths below.
+Requires JDK 17 or later and MySQL 8.4. These commands assume the database is set up and the Java files are compiled.
 
-**1. Start MySQL** in one PowerShell window, if it is not already running. Leave this window open:
+**1. Start MySQL** in one PowerShell window, if it is not already running:
 
 ```powershell
 & "C:\Program Files\MySQL\MySQL Server 8.4\bin\mysqld.exe" --defaults-file="C:\Users\N.Thiyatira Reni\mysql_data\my.ini" --console
 ```
 
-**2. Start the app** by pasting this whole command into another PowerShell window:
+**2. Start the app** in another PowerShell window:
 
 ```powershell
-& {
-    Set-Location "C:\Users\N.Thiyatira Reni\Desktop\jdbc database\ReniBank"
-    if (!(Test-Path config.properties)) {
-        & "C:\Program Files\MySQL\MySQL Server 8.4\bin\mysql.exe" -u root -p -e "source sql/setup_windows.sql"
-        if ($LASTEXITCODE -ne 0) { return }
-        Copy-Item config.example.properties config.properties
-    }
-    New-Item -ItemType Directory -Force build | Out-Null
-    javac --release 17 -encoding UTF-8 -cp "lib\*" -d build (Get-ChildItem src\*.java).FullName
-    if ($LASTEXITCODE -eq 0) { java -cp "build;lib\*" Main }
-}
+cd "C:\Users\N.Thiyatira Reni\Desktop\jdbc database\ReniBank"
+java -cp "build;lib\*" Main
 ```
 
-On first use, enter your MySQL root password when prompted. Setup creates the database and demo accounts. Later runs compile and start the app. If your MySQL port or login differs, edit `config.properties`.
+First use: run `sql/setup_windows.sql` in MySQL, copy `config.example.properties` to `config.properties`, and compile the Java files in `src` into `build`. Edit `config.properties` if your MySQL settings differ.
 
 ## Demo accounts
 
