@@ -17,7 +17,7 @@ public class AccountDAO {
 
     public AccountDAO() throws Exception {
         Properties p = new Properties();
-        try (InputStream in = Files.newInputStream(Path.of(System.getProperty("config", "config.properties")))) {
+        try (InputStream in = Files.newInputStream(Path.of("config.properties"))) {
             p.load(in);
         }
         url = p.getProperty("db.url");
@@ -26,14 +26,7 @@ public class AccountDAO {
         DriverManager.setLoginTimeout(5);
     }
 
-    Connection getConnection() throws SQLException { return DriverManager.getConnection(url, user, password); }
-
-    public void initialize() throws Exception {
-        try (Connection c = getConnection(); Statement s = c.createStatement()) {
-            for (String sql : Files.readString(Path.of("sql/schema.sql")).split(";"))
-                if (!sql.isBlank()) s.executeUpdate(sql);
-        }
-    }
+    private Connection getConnection() throws SQLException { return DriverManager.getConnection(url, user, password); }
 
     private PreparedStatement prepare(Connection c, String sql, Object... values) throws SQLException {
         PreparedStatement s = c.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS);
@@ -90,10 +83,6 @@ public class AccountDAO {
             }
         }
         throw new IllegalArgumentException("Account number or PIN is incorrect.");
-    }
-
-    public Account getAccount(long number) throws SQLException {
-        try (Connection c = getConnection()) { return account(c, number, false); }
     }
 
     private Account account(Connection c, long number, boolean lock) throws SQLException {

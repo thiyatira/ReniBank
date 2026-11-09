@@ -1,5 +1,4 @@
 build/
 config.properties
-config.test.properties
 *.class
 .DS_Store
