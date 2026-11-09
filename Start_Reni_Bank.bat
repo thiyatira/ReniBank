@@ -20,7 +20,7 @@ if not exist "config.properties" copy /y "config.example.properties" "config.pro
 if not exist "build" mkdir "build"
 javac --release 17 -encoding UTF-8 -cp "lib\*" -d "build" src\*.java
 if errorlevel 1 goto failed
-java -cp "build;lib\*" ATMApp
+java -cp "build;lib\*" Main
 if errorlevel 1 goto failed
 exit /b 0
 :failed

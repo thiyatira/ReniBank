@@ -1,17 +1,23 @@
 # Reni Bank
 
-Java Swing + JDBC + MySQL ATM project for Windows.  
-**Thiyatira Reni N | RA2511003010637**  
-Advanced Programming Practice  
+Simple menu-driven Java console + JDBC + MySQL project for Windows.
+**Thiyatira Reni N | RA2511003010637**
+Advanced Programming Practice
 SRM Institute of Science and Technology, Kattankulathur
 
 ## Windows setup
 
 1. Install **JDK 17 or later**, **MySQL Server 8 or later**, and **MySQL Workbench**. Ensure Java's `bin` folder is in PATH and the MySQL service is running.
-2. In MySQL Workbench, connect as root, open `sql/setup_windows.sql`, and execute the complete file once. It creates the database and the four demo accounts.
-3. Double-click **Start_Reni_Bank.bat**. It copies the example configuration if needed, compiles the Java files, and opens the app.
+2. In MySQL Workbench, connect as root, open `sql/setup_windows.sql`, and execute the complete file. It creates the main database, four demo accounts and a separate empty test database.
+3. Open PowerShell in this project folder and run:
 
-The default MySQL port is **3306**. If yours differs, change it in `config.properties`. The example configuration and setup SQL use the same local demo password. If you change that password, update both files. If `atm_user` already exists, use its password in the configuration.
+```powershell
+.\Start_Reni_Bank.bat
+```
+
+Choose an option from 1 to 8. Account operations ask for an account number and PIN.
+
+The default MySQL port is **3306**. Edit `config.properties` if your settings differ. If `atm_user` already exists, use its existing password. Amounts are in Indian rupees.
 
 | Customer | Account | PIN | Balance |
 |---|---|---|---|
@@ -20,12 +26,25 @@ The default MySQL port is **3306**. If yours differs, change it in `config.prope
 | Jabin | 1001005 | 2468 | ₹13,000.00 |
 | Sandhya | 1001006 | 1357 | ₹14,500.00 |
 
-These are fictional demo accounts. Import the setup SQL only into a new database; transactions persist in MySQL.
+These are fictional demo accounts. Transactions persist in MySQL. Running setup again preserves existing account balances and transaction rows.
 
-## Files
+## Test
 
-- `src/ATMApp.java`: menu and forms for all eight operations.
-- `src/Bank.java`: validation, PIN checks and JDBC operations.
+Run this in the same PowerShell window:
+
+```powershell
+.\Test_Reni_Bank.bat
+```
+
+It checks account creation, PIN validation, deposits, withdrawals, transfers and mini statements in `atm_bank_test`, without changing the four demo accounts. Expected result: **15 checks passed**. Edit `config.test.properties` if your MySQL settings differ.
+
+## Code structure
+
+- `src/Account.java`, `src/Transaction.java`: simple data models.
+- `src/ATMView.java`: Scanner input and printed output.
+- `src/AccountDAO.java`: JDBC queries and transaction handling.
+- `src/ATMController.java`: connects the menu to the DAO.
+- `src/Main.java`: starts the application.
 - `lib/`: included MySQL Connector/J driver and license.
 - `sql/`: table definitions, sample data and Windows setup.
 

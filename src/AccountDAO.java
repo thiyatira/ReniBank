@@ -11,13 +11,11 @@ import javax.crypto.SecretKeyFactory;
 import javax.crypto.spec.PBEKeySpec;
 
 /** Small JDBC layer: all money changes and their statement entries commit together. */
-public class Bank {
-    public record Account(long number, String name, String type, BigDecimal balance, String mobile) {}
-    public record Entry(Timestamp time, String type, BigDecimal amount, Long other, BigDecimal balance) {}
+public class AccountDAO {
     private final String url, user, password;
     private static final BigDecimal MAX = new BigDecimal("9999999999.99");
 
-    public Bank() throws Exception {
+    public AccountDAO() throws Exception {
         Properties p = new Properties();
         Path file = Path.of(System.getProperty("config", "config.properties"));
         if (Files.exists(file)) {
@@ -29,10 +27,10 @@ public class Bank {
         DriverManager.setLoginTimeout(5);
     }
 
-    Connection connect() throws SQLException { return DriverManager.getConnection(url, user, password); }
+    Connection getConnection() throws SQLException { return DriverManager.getConnection(url, user, password); }
 
     public void initialize() throws Exception {
-        try (Connection c = connect(); Statement s = c.createStatement()) {
+        try (Connection c = getConnection(); Statement s = c.createStatement()) {
             for (String sql : Files.readString(Path.of("sql/schema.sql")).split(";"))
                 if (!sql.isBlank()) s.executeUpdate(sql);
         }
@@ -64,7 +62,7 @@ public class Bank {
         BigDecimal amount = money(deposit, true);
         byte[] salt = new byte[16];
         new SecureRandom().nextBytes(salt);
-        try (Connection c = connect()) {
+        try (Connection c = getConnection()) {
             c.setAutoCommit(false);
             try (PreparedStatement s = prepare(c, """
                     INSERT INTO accounts(customer_name, account_type, pin_hash, pin_salt, balance, mobile_number)
@@ -81,7 +79,7 @@ public class Bank {
     }
 
     public Account login(long number, String pin) throws Exception {
-        try (Connection c = connect(); PreparedStatement s = prepare(c,
+        try (Connection c = getConnection(); PreparedStatement s = prepare(c,
                 "SELECT pin_hash, pin_salt FROM accounts WHERE account_number = ?", number)) {
             try (ResultSet r = s.executeQuery()) {
                 if (r.next()) {
@@ -96,7 +94,7 @@ public class Bank {
     }
 
     public Account getAccount(long number) throws SQLException {
-        try (Connection c = connect()) { return account(c, number, false); }
+        try (Connection c = getConnection()) { return account(c, number, false); }
     }
 
     private Account account(Connection c, long number, boolean lock) throws SQLException {
@@ -119,13 +117,13 @@ public class Bank {
     }
 
     private BigDecimal change(long number, BigDecimal amount, boolean withdraw) throws SQLException {
-        try (Connection c = connect()) {
+        try (Connection c = getConnection()) {
             c.setAutoCommit(false);
             try {
                 Account a = account(c, number, true);
-                if (withdraw && a.balance().compareTo(amount) < 0)
+                if (withdraw && a.getBalance().compareTo(amount) < 0)
                     throw new IllegalArgumentException("Insufficient balance. Please enter a smaller amount.");
-                BigDecimal balance = a.balance().add(withdraw ? amount.negate() : amount);
+                BigDecimal balance = a.getBalance().add(withdraw ? amount.negate() : amount);
                 if (balance.compareTo(MAX) > 0) throw new IllegalArgumentException("The account balance limit would be exceeded.");
                 updateBalance(c, number, balance);
                 record(c, number, withdraw ? "WITHDRAWAL" : "DEPOSIT", amount, null, balance);
@@ -138,17 +136,17 @@ public class Bank {
     public BigDecimal transfer(long from, long to, String value) throws SQLException {
         if (from == to) throw new IllegalArgumentException("Choose a different account for the transfer.");
         BigDecimal amount = money(value, false);
-        try (Connection c = connect()) {
+        try (Connection c = getConnection()) {
             c.setAutoCommit(false);
             try {
                 // Lock in account-number order to avoid opposite transfers deadlocking.
                 Account first = account(c, Math.min(from, to), true);
                 Account second = account(c, Math.max(from, to), true);
-                Account sender = first.number() == from ? first : second;
-                Account receiver = first.number() == to ? first : second;
-                if (sender.balance().compareTo(amount) < 0) throw new IllegalArgumentException("Insufficient balance for this transfer.");
-                BigDecimal debit = sender.balance().subtract(amount);
-                BigDecimal credit = receiver.balance().add(amount);
+                Account sender = first.getNumber() == from ? first : second;
+                Account receiver = first.getNumber() == to ? first : second;
+                if (sender.getBalance().compareTo(amount) < 0) throw new IllegalArgumentException("Insufficient balance for this transfer.");
+                BigDecimal debit = sender.getBalance().subtract(amount);
+                BigDecimal credit = receiver.getBalance().add(amount);
                 if (credit.compareTo(MAX) > 0) throw new IllegalArgumentException("The recipient balance limit would be exceeded.");
                 updateBalance(c, from, debit); updateBalance(c, to, credit);
                 record(c, from, "TRANSFER_OUT", amount, to, debit);
@@ -174,16 +172,16 @@ public class Bank {
         }
     }
 
-    public List<Entry> statement(long number) throws SQLException {
-        List<Entry> rows = new ArrayList<>();
-        try (Connection c = connect(); PreparedStatement s = prepare(c, """
+    public List<Transaction> statement(long number) throws SQLException {
+        List<Transaction> rows = new ArrayList<>();
+        try (Connection c = getConnection(); PreparedStatement s = prepare(c, """
                 SELECT * FROM transactions WHERE account_number = ? ORDER BY transaction_id DESC LIMIT 10
                 """, number)) {
             try (ResultSet r = s.executeQuery()) {
                 while (r.next()) {
                     long related = r.getLong("related_account");
                     Long other = r.wasNull() ? null : related;
-                    rows.add(new Entry(r.getTimestamp("transaction_time"), r.getString("transaction_type"),
+                    rows.add(new Transaction(r.getTimestamp("transaction_time"), r.getString("transaction_type"),
                             r.getBigDecimal("amount"), other, r.getBigDecimal("balance_after")));
                 }
             }
