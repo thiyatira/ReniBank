@@ -17,13 +17,12 @@ public class AccountDAO {
 
     public AccountDAO() throws Exception {
         Properties p = new Properties();
-        Path file = Path.of(System.getProperty("config", "config.properties"));
-        if (Files.exists(file)) {
-            try (InputStream in = Files.newInputStream(file)) { p.load(in); }
+        try (InputStream in = Files.newInputStream(Path.of(System.getProperty("config", "config.properties")))) {
+            p.load(in);
         }
-        url = p.getProperty("db.url", "jdbc:mysql://localhost:3306/atm_bank");
-        user = p.getProperty("db.user", "atm_user");
-        password = p.getProperty("db.password", "");
+        url = p.getProperty("db.url");
+        user = p.getProperty("db.user");
+        password = p.getProperty("db.password");
         DriverManager.setLoginTimeout(5);
     }
 

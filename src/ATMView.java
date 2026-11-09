@@ -7,32 +7,28 @@ public class ATMView {
     private final Scanner input = new Scanner(System.in);
 
     public void showMenu() {
-        System.out.println("\n--- RENI BANK ---");
-        System.out.println("1. Create new account");
-        System.out.println("2. Display account details");
-        System.out.println("3. Balance enquiry");
-        System.out.println("4. Cash deposit");
-        System.out.println("5. Cash withdrawal");
-        System.out.println("6. Fund transfer");
-        System.out.println("7. Mini statement");
-        System.out.println("8. Exit");
+        System.out.println("""
+
+                --- RENI BANK ---
+                1. Create new account
+                2. Display account details
+                3. Balance enquiry
+                4. Cash deposit
+                5. Cash withdrawal
+                6. Fund transfer
+                7. Mini statement
+                8. Exit""");
     }
 
     public String read(String prompt) {
         System.out.print(prompt + ": ");
-        if (!input.hasNextLine()) return null;
+        if (!input.hasNextLine()) throw new IllegalStateException("Input closed.");
         return input.nextLine().trim();
-    }
-
-    public String required(String prompt) {
-        String value = read(prompt);
-        if (value == null) throw new IllegalStateException("Input closed.");
-        return value;
     }
 
     public long readNumber(String prompt) {
         try {
-            long number = Long.parseLong(required(prompt));
+            long number = Long.parseLong(read(prompt));
             if (number > 0) return number;
         } catch (NumberFormatException e) { }
         throw new IllegalArgumentException("Enter a valid account number.");

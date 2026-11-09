@@ -1,5 +1,3 @@
-import java.sql.SQLException;
-
 // Controller: connects the console view to the JDBC DAO.
 public class ATMController {
     private final AccountDAO dao;
@@ -12,65 +10,46 @@ public class ATMController {
 
     public void run() {
         while (true) {
-            view.showMenu();
-            String choice = view.read("Choose an option");
-            if (choice == null || choice.equals("8")) {
-                view.message("Thank you for using Reni Bank.");
-                return;
-            }
             try {
+                view.showMenu();
+                String choice = view.read("Choose an option");
+                if (choice.equals("8")) return;
+                if (choice.equals("1")) {
+                    createAccount();
+                    continue;
+                }
+                if (!choice.matches("[2-7]")) {
+                    view.message("Choose an option from 1 to 8.");
+                    continue;
+                }
+                long number = view.readNumber("Account number");
+                Account account = dao.login(number, view.read("PIN"));
                 switch (choice) {
-                    case "1": createAccount(); break;
-                    case "2": view.showAccount(verifyAccount()); break;
-                    case "3": view.showBalance(verifyAccount().getBalance()); break;
-                    case "4": deposit(); break;
-                    case "5": withdraw(); break;
-                    case "6": transfer(); break;
-                    case "7": view.showStatement(dao.statement(verifyAccount().getNumber())); break;
-                    default: view.message("Choose an option from 1 to 8.");
+                    case "2": view.showAccount(account); break;
+                    case "3": view.showBalance(account.getBalance()); break;
+                    case "4": view.showBalance(dao.deposit(number, view.read("Deposit amount in INR"))); break;
+                    case "5": view.showBalance(dao.withdraw(number, view.read("Withdrawal amount in INR"))); break;
+                    case "6":
+                        long recipient = view.readNumber("Recipient account number");
+                        view.showBalance(dao.transfer(number, recipient, view.read("Transfer amount in INR")));
+                        break;
+                    case "7": view.showStatement(dao.statement(number)); break;
                 }
             } catch (IllegalStateException e) {
-                view.message(e.getMessage());
-                return;
-            } catch (SQLException e) {
-                view.message("Database error: " + e.getMessage());
+                return; // Input was closed.
             } catch (Exception e) {
                 view.message(e.getMessage());
             }
         }
     }
 
-    private Account verifyAccount() throws Exception {
-        long number = view.readNumber("Account number");
-        return dao.login(number, view.required("PIN"));
-    }
-
     private void createAccount() throws Exception {
-        String name = view.required("Customer name");
-        String type = view.required("Account type (Savings/Current)");
-        String pin = view.required("PIN (4 digits)");
-        String mobile = view.required("Mobile number (10 digits)");
-        String deposit = view.required("Initial deposit in INR");
+        String name = view.read("Customer name");
+        String type = view.read("Account type (Savings/Current)");
+        String pin = view.read("PIN (4 digits)");
+        String mobile = view.read("Mobile number (10 digits)");
+        String deposit = view.read("Initial deposit in INR");
         long number = dao.createAccount(name, type, pin, mobile, deposit);
         view.message("Account created. Account number: " + number);
-    }
-
-    private void deposit() throws Exception {
-        Account account = verifyAccount();
-        String amount = view.required("Deposit amount in INR");
-        view.showBalance(dao.deposit(account.getNumber(), amount));
-    }
-
-    private void withdraw() throws Exception {
-        Account account = verifyAccount();
-        String amount = view.required("Withdrawal amount in INR");
-        view.showBalance(dao.withdraw(account.getNumber(), amount));
-    }
-
-    private void transfer() throws Exception {
-        Account account = verifyAccount();
-        long recipient = view.readNumber("Recipient account number");
-        String amount = view.required("Transfer amount in INR");
-        view.showBalance(dao.transfer(account.getNumber(), recipient, amount));
     }
 }

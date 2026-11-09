@@ -4,9 +4,7 @@ public class Main {
         try {
             AccountDAO dao = new AccountDAO();
             dao.initialize();
-            ATMView view = new ATMView();
-            ATMController controller = new ATMController(dao, view);
-            controller.run();
+            new ATMController(dao, new ATMView()).run();
         } catch (Exception e) {
             System.err.println("Cannot start Reni Bank: " + e.getMessage());
             System.err.println("Check MySQL and config.properties.");
