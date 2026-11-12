@@ -5,9 +5,14 @@ Thiyatira Reni N | RA2511003010637
 Advanced Programming Practice
 SRM Institute of Science and Technology, Kattankulathur
 
-## Run
+## Requirements
 
-Requires JDK 17 or later and MySQL 8.4. These commands assume the database is set up and the Java files are compiled.
+- JDK 17 or later
+- MySQL 8.4
+
+The MySQL driver is already included in `lib/`.
+
+## Run (Windows PowerShell)
 
 **1. Start MySQL** in one PowerShell window, if it is not already running:
 
@@ -22,7 +27,12 @@ cd "C:\Users\N.Thiyatira Reni\Desktop\jdbc database\ReniBank"
 java -cp "build;lib\*" Main
 ```
 
-First use: run `sql/setup_windows.sql` in MySQL, copy `config.example.properties` to `config.properties`, and compile the Java files in `src` into `build`. Edit `config.properties` if your MySQL settings differ.
+First use only, before step 2 (from the project folder):
+
+```powershell
+& "C:\Program Files\MySQL\MySQL Server 8.4\bin\mysql.exe" -u root -p -e "source setup.sql"
+javac -d build src\Main.java
+```
 
 ## Demo accounts
 
@@ -36,12 +46,10 @@ Choose an option from 1 to 8. Account operations ask for the account number and 
 
 ## Files
 
-- `src/Account.java`, `src/Transaction.java`: data models.
-- `src/ATMView.java`: keyboard input and printed output.
-- `src/AccountDAO.java`: JDBC operations.
-- `src/ATMController.java`: menu logic.
-- `src/Main.java`: starts the application.
-- `sql/setup_windows.sql`: database, tables and demo data.
-- `lib/`: MySQL Connector/J and its license.
+- `src/Main.java`: the whole app (menu, input/output, database code).
+- `setup.sql`: database, tables and demo accounts.
+- `lib/`: MySQL Connector/J driver and its license.
+
+If your MySQL does not use port 3306, change `URL` at the top of `AccountDAO` in `src/Main.java`.
 
 Source repository: https://github.com/thiyatira/ReniBank

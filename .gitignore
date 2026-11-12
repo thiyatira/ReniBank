@@ -1,4 +1,3 @@
 build/
-config.properties
 *.class
 .DS_Store

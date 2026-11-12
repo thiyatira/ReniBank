@@ -1,5 +1,4 @@
--- Run as root using the command in README.md.
--- These credentials are for the local classroom demonstration.
+-- Creates the database, app user, tables and demo accounts. Safe to run again.
 CREATE DATABASE IF NOT EXISTS atm_bank CHARACTER SET utf8mb4;
 CREATE USER IF NOT EXISTS 'atm_user'@'localhost' IDENTIFIED BY 'ReniBankDemo123';
 CREATE USER IF NOT EXISTS 'atm_user'@'127.0.0.1' IDENTIFIED BY 'ReniBankDemo123';
